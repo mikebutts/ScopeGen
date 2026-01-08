@@ -1,12 +1,13 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-export function requireUserId() {
-  const { userId } = auth();
-  if (!userId) {
+export async function requireUserId() {
+  const user = await currentUser();
+  if (!user) {
     return {
       userId: null as string | null,
-      error: new Response("Unauthorized", { status: 401 }),
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
-  return { userId, error: null as Response | null };
+  return { userId: user.id, error: null as any };
 }

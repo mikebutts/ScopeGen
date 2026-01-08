@@ -60,7 +60,7 @@ export const IntakeSchema = z.object({
   projectType: ProjectTypeEnum,
   primaryGoal: PrimaryGoalEnum,
 
-  description: z.string().min(10).max(4000),
+  description: z.string().min(10).max(4000).optional(),
 
   userTypes: z.array(z.string().min(2).max(50)).default([]),
   roles: z.array(z.string().min(2).max(50)).default([]),

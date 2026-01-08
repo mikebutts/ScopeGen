@@ -23,7 +23,7 @@ const ProjectIntakeSchema = new Schema(
     projectType: { type: String, required: true },
     primaryGoal: { type: String, required: true },
 
-    description: { type: String, required: true },
+    description: { type: String },
 
     userTypes: { type: [String], default: [] },
     roles: { type: [String], default: [] },
