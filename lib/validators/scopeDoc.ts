@@ -1,60 +1,99 @@
 import { z } from "zod";
 
-export const RiskImpactEnum = z.enum(["Low", "Medium", "High"]);
+/**
+ * Helpers
+ */
+const NonEmptyString = z.string().min(1);
+const NonEmptyStringArray = z.array(NonEmptyString).min(1);
 
+/**
+ * Sub-schemas
+ */
+export const RiskSchema = z.object({
+  risk: NonEmptyString,
+  impact: z.enum(["Low", "Medium", "High"]),
+  mitigation: NonEmptyString,
+});
+
+export const TimelineItemSchema = z.object({
+  phase: NonEmptyString,
+  durationWeeks: z.number().int().min(1),
+  whatHappens: NonEmptyStringArray,
+});
+
+export const MilestoneSchema = z.object({
+  name: NonEmptyString,
+  description: NonEmptyString,
+  dueWeek: z.number().int().min(1),
+  deliverables: NonEmptyStringArray,
+});
+
+export const PricingEstimateSchema = z.object({
+  lowUSD: z.number().int().min(0),
+  highUSD: z.number().int().min(0),
+  pricingDrivers: NonEmptyStringArray,
+  paymentScheduleSuggestion: NonEmptyString,
+});
+
+export const TechStackSchema = z.object({
+  frontend: NonEmptyStringArray,
+  backend: NonEmptyStringArray,
+  database: NonEmptyStringArray,
+  auth: NonEmptyStringArray,
+  hosting: NonEmptyStringArray,
+  integrations: z.array(NonEmptyString).default([]),
+});
+
+export const MVPSchema = z.object({
+  features: NonEmptyStringArray,
+  userStories: NonEmptyStringArray,
+});
+
+export const Phase2Schema = z.object({
+  features: NonEmptyStringArray,
+});
+
+export const ScopeBoundariesSchema = z.object({
+  inScope: NonEmptyStringArray,
+  outOfScope: NonEmptyStringArray,
+});
+
+/**
+ * MAIN SCOPE DOCUMENT SCHEMA
+ */
 export const ScopeDocSchema = z.object({
-  projectTitle: z.string().min(2),
-  executiveSummary: z.string().min(10),
-  problemStatement: z.string().min(10),
-  goals: z.array(z.string().min(2)),
-  userTypes: z.array(z.string().min(2)),
+  // Overview
+  projectTitle: NonEmptyString,
+  executiveSummary: NonEmptyString,
+  problemStatement: NonEmptyString,
 
-  mvp: z.object({
-    features: z.array(z.string().min(2)),
-    userStories: z.array(z.string().min(2)),
-  }),
+  // Goals & users
+  goals: NonEmptyStringArray,
+  userTypes: NonEmptyStringArray,
 
-  phase2: z.object({
-    features: z.array(z.string().min(2)),
-  }),
+  // Scope
+  mvp: MVPSchema,
+  phase2: Phase2Schema,
+  nonGoals: NonEmptyStringArray,
+  scopeBoundaries: ScopeBoundariesSchema,
 
-  nonGoals: z.array(z.string().min(2)),
-  assumptions: z.array(z.string().min(2)),
+  // Planning
+  timeline: z.array(TimelineItemSchema).min(1),
+  milestones: z.array(MilestoneSchema).min(1),
 
-  risks: z.array(
-    z.object({
-      risk: z.string().min(2),
-      impact: RiskImpactEnum,
-      mitigation: z.string().min(2),
-    })
-  ),
+  // Constraints
+  assumptions: NonEmptyStringArray,
+  dependencies: NonEmptyStringArray,
+  risks: z.array(RiskSchema).min(1),
 
-  timeline: z.array(
-    z.object({
-      phase: z.string().min(2),
-      durationWeeks: z.number().positive(),
-      whatHappens: z.array(z.string().min(2)),
-    })
-  ),
+  // Commercials & tech
+  pricingEstimate: PricingEstimateSchema,
+  techStack: TechStackSchema,
 
-  pricingEstimate: z.object({
-    lowUSD: z.number().nonnegative(),
-    highUSD: z.number().nonnegative(),
-    pricingDrivers: z.array(z.string().min(2)),
-    paymentScheduleSuggestion: z.string().min(2),
-  }),
-
-  techStack: z.object({
-    frontend: z.array(z.string().min(2)),
-    backend: z.array(z.string().min(2)),
-    database: z.array(z.string().min(2)),
-    auth: z.array(z.string().min(2)),
-    hosting: z.array(z.string().min(2)),
-    integrations: z.array(z.string().min(2)),
-  }),
-
-  deliverables: z.array(z.string().min(2)),
-  nextSteps: z.array(z.string().min(2)),
+  // Delivery
+  deliverables: NonEmptyStringArray,
+  acceptanceCriteria: NonEmptyStringArray,
+  nextSteps: NonEmptyStringArray,
 });
 
 export type ScopeDocOutput = z.infer<typeof ScopeDocSchema>;

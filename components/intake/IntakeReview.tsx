@@ -28,18 +28,44 @@ export default function IntakeReview({ intakeId }: { intakeId: string }) {
     }
   }
 
+  // async function generate() {
+  //   setGenerating(true);
+  //   setErr(null);
+  //   try {
+  //     const res = await fetch("/api/scope/generate", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ intakeId }),
+  //     });
+  //     const data = await res.json().catch(() => ({}));
+  //     if (!res.ok) throw new Error(data?.error ?? `Failed: ${res.status}`);
+  //     const scopeId = data?.scopeDoc?._id;
+  //     router.push(`/scope/${scopeId}`);
+  //   } catch (e: any) {
+  //     setErr(e?.message ?? "Failed to generate scope");
+  //   } finally {
+  //     setGenerating(false);
+  //   }
+  // }
   async function generate() {
     setGenerating(true);
     setErr(null);
+
     try {
-      const res = await fetch("/api/scope/generate", {
+      const res = await fetch(`/api/intakes/${intakeId}/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intakeId }),
       });
+
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? `Failed: ${res.status}`);
+
+      if (!res.ok) {
+        throw new Error(data?.error ?? `Failed: ${res.status}`);
+      }
+
       const scopeId = data?.scopeDoc?._id;
+      if (!scopeId) throw new Error("No scope document returned");
+
+      // ✅ you already have /(dashboard)/scope/[scopeId]
       router.push(`/scope/${scopeId}`);
     } catch (e: any) {
       setErr(e?.message ?? "Failed to generate scope");

@@ -11,7 +11,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/scope/:id
 export async function GET(_req: Request, { params }: Ctx) {
-  const { userId, error } = requireUserId();
+  const { userId, error } = await requireUserId();
   if (error) return error;
 
   const { id } = await params;
