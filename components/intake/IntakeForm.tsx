@@ -147,7 +147,13 @@ export default function IntakeForm() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? `Failed: ${res.status}`);
+      // if (!res.ok) throw new Error(data?.error ?? `Failed: ${res.status}`);
+      if (!res.ok) {
+        const issues = (data?.issues ?? [])
+          .map((i: any) => `${(i.path || []).join(".")}: ${i.message}`)
+          .join("\n");
+        throw new Error(issues || data?.error || `Failed: ${res.status}`);
+      }
 
       const intakeId = data?.intake?._id;
       router.push(`/projects/${intakeId}`);
@@ -365,6 +371,11 @@ export default function IntakeForm() {
         >
           Cancel
         </button>
+        {error && (
+          <div className="rounded-lg border border-red-900 bg-red-950/40 p-3 text-red-300 whitespace-pre-wrap">
+            {error}
+          </div>
+        )}
       </div>
     </form>
   );

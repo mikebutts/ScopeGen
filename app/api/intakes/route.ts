@@ -1,52 +1,122 @@
+// /app/api/intakes/[id]/route.ts
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
+
 import { connectToDB } from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
 import ProjectIntake from "@/models/ProjectIntake";
-import { IntakeSchema } from "@/lib/validators/intake";
+import { serializeMongo } from "@/lib/serialize";
 
-export async function POST(req: Request) {
-  const { userId, error } = await requireUserId();
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function GET(_req: Request, { params }: Ctx) {
+  const { userId, error } = requireUserId();
   if (error) return error;
 
-  const body = await req.json().catch(() => null);
-  const parsed = IntakeSchema.safeParse(body);
-  if (!parsed.success) {
+  const { id } = await params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  await connectToDB();
+
+  const intakeDoc = await ProjectIntake.findById(id);
+
+  // if (!intakeDoc) {
+  //   return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // }
+  // if (!intakeDoc) {
+  //   const exists = await ProjectIntake.findById(id).lean();
+
+  //   return NextResponse.json(
+  //     {
+  //       error: "Not found",
+  //       debug: exists
+  //         ? {
+  //             reason: "Intake exists but userId does not match current session",
+  //             intakeUserId: exists.userId,
+  //             currentUserId: userId,
+  //           }
+  //         : { reason: "No intake with that id exists" },
+  //     },
+  //     { status: 404 }
+  //   );
+  // }
+  if (!intakeDoc) {
+    const exists = await ProjectIntake.findById(id).lean();
+
     return NextResponse.json(
-      { error: "Invalid intake payload", issues: parsed.error.issues },
+      {
+        error: "Not found",
+        debug: exists
+          ? {
+              reason: "Found intake but userId does not match current session",
+              intakeUserId: exists.userId,
+              currentUserId: userId,
+            }
+          : { reason: "No intake with that id exists" },
+      },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ intake: serializeMongo(intakeDoc) });
+}
+
+export async function PATCH(req: Request, { params }: Ctx) {
+  const { userId, error } = requireUserId();
+  if (error) return error;
+
+  const { id } = await params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  const updates = await req.json().catch(() => null);
+  if (!updates || typeof updates !== "object") {
+    return NextResponse.json(
+      { error: "Invalid update payload" },
       { status: 400 }
     );
   }
 
   await connectToDB();
 
-  try {
-    const created = await ProjectIntake.create({
-      userId,
-      ...parsed.data,
-    });
+  const updatedDoc = await ProjectIntake.findOneAndUpdate(
+    { _id: id, userId },
+    { $set: updates },
+    { new: true }
+  ).lean();
 
-    return NextResponse.json({ intake: created }, { status: 201 });
-  } catch (dbError) {
-    console.error("Database error:", dbError);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  if (!updatedDoc) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  return NextResponse.json({ intake: serializeMongo(updatedDoc) });
 }
 
-export async function GET() {
+export async function DELETE(_req: Request, { params }: Ctx) {
   const { userId, error } = requireUserId();
   if (error) return error;
 
+  const { id } = await params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
   await connectToDB();
 
-  try {
-    const intakes = await ProjectIntake.find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+  const deleted = await ProjectIntake.findOneAndDelete({
+    _id: id,
+    userId,
+  }).lean();
 
-    return NextResponse.json({ intakes });
-  } catch (dbError) {
-    console.error("Database error:", dbError);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  if (!deleted) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  return NextResponse.json({ ok: true });
 }

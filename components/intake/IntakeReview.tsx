@@ -52,6 +52,10 @@ export default function IntakeReview({ intakeId }: { intakeId: string }) {
     load();
   }, [intakeId]);
 
+  if (!intakeId) {
+    setErr("Missing intakeId in route.");
+    return;
+  }
   if (loading) return <p className="text-zinc-300">Loading…</p>;
   if (err) return <p className="text-red-400">Error: {err}</p>;
   if (!intake) return <p className="text-zinc-300">Not found.</p>;

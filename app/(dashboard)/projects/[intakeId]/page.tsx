@@ -1,9 +1,15 @@
 import IntakeReview from "@/components/intake/IntakeReview";
 
-export default function IntakePage({
-  params,
-}: {
-  params: { intakeId: string };
-}) {
-  return <IntakeReview intakeId={params.intakeId} />;
+type PageProps = {
+  params: Promise<{ intakeId: string }>;
+};
+
+export default async function IntakePage({ params }: PageProps) {
+  const { intakeId } = await params; // ✅ THIS IS THE FIX
+
+  return (
+    <div className="p-8">
+      <IntakeReview intakeId={intakeId} />
+    </div>
+  );
 }
