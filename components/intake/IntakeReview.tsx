@@ -54,6 +54,7 @@ export default function IntakeReview({ intakeId }: { intakeId: string }) {
     try {
       const res = await fetch(`/api/intakes/${intakeId}/generate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await res.json().catch(() => ({}));
@@ -62,10 +63,18 @@ export default function IntakeReview({ intakeId }: { intakeId: string }) {
         throw new Error(data?.error ?? `Failed: ${res.status}`);
       }
 
-      const scopeId = data?.scopeDoc?._id;
-      if (!scopeId) throw new Error("No scope document returned");
+      // ✅ Accept a few possible shapes so you're not blocked
+      const scopeDoc =
+        data?.scopeDoc ?? data?.scope ?? data?.doc ?? data?.result ?? null;
 
-      // ✅ you already have /(dashboard)/scope/[scopeId]
+      const scopeId =
+        scopeDoc?._id ?? data?.scopeId ?? data?.scopeDocId ?? data?.id ?? null;
+
+      if (!scopeId) {
+        console.log("Generate response data:", data);
+        throw new Error("No scope document returned");
+      }
+
       router.push(`/scope/${scopeId}`);
     } catch (e: any) {
       setErr(e?.message ?? "Failed to generate scope");

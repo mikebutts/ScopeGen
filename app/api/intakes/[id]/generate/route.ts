@@ -76,9 +76,8 @@ export async function POST(_req: Request, { params }: Ctx) {
       status: "generated",
       version: nextVersion,
     });
-
     return NextResponse.json(
-      { scopeDoc: serializeMongo(scopeDoc) },
+      { scopeDoc: serializeMongo(scopeDoc.toObject()) },
       { status: 201 }
     );
   } catch (err: any) {
