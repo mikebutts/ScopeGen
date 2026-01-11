@@ -2,18 +2,19 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
 import ProjectIntake from "@/models/ProjectIntake";
-import { IntakeSchema } from "@/lib/validators/intake";
+import { serializeMongo } from "@/lib/serialize";
 
-export async function POST(req: Request) {
+export async function GET() {
   const { userId, error } = await requireUserId();
   if (error) return error;
 
   await connectToDB();
 
-  const intakes = await ProjectIntake.find({ userId })
-    .sort({ createdAt: -1 })
-    .limit(50)
+  const docs = await ProjectIntake.find({ userId })
+    .sort({ updatedAt: -1 })
     .lean();
 
-  return NextResponse.json({ intakes });
+  return NextResponse.json({
+    intakes: docs.map(serializeMongo),
+  });
 }
